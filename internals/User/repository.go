@@ -50,3 +50,14 @@ func (r *UserRepository) UpdateUserOTP(email, VerifyOTP string, OTPExpireAt int6
 	r.db.Save(user)
 	return user, nil
 }
+func (r *UserRepository) VerifyOTPRepo(email string) (*models.User, error) {
+	user, err := r.GetByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	user.VerifyOTP = ""
+	user.OTPExpireAt = 0
+	user.IsAccVerified = true
+	r.db.Save(user)
+	return user, nil
+}

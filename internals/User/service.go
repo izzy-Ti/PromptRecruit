@@ -90,3 +90,28 @@ func (s *UserService) SendVerifyOTPService(email string) (bool, error) {
 	}
 	return true, nil
 }
+func (s *UserService) VerifyOTPService(email, otp string) (bool, error) {
+	user, err := s.repo.GetByEmail(email)
+	if err != nil {
+		return false, err
+	}
+	if user.VerifyOTP != otp || user.VerifyOTP == "" {
+		return false, errors.New("Invalid otp")
+	}
+	if user.OTPExpireAt < time.Now().UnixMilli() {
+		return false, errors.New("OTP expired")
+	}
+	subject := "Welcome! Your account has been verified"
+	html := fmt.Sprintf(`
+		<p>Hi %s,</p>
+		<p>Thank you. Your account has been successfully verified.</p>
+		<p>You can now sign in and start using your account.</p>
+		<p>If you did not perform this action, you can reply to this email directly.</p>
+	`, user.Name)
+
+	err = Utils.Sendemail(user.Email, user.Name, subject, html)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}

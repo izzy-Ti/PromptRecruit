@@ -82,9 +82,33 @@ func (h *AuthHandler) SendVerifyOTP(w http.ResponseWriter, r *http.Request) {
 		Email string `json:"email"`
 	}
 	Utils.ParseJSON(r, &req)
-	h.svc.SendVerifyOTPService(req.Email)
+	ok, err := h.svc.SendVerifyOTPService(req.Email)
+	if ok {
+		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+			"success": false,
+			"message": err,
+		})
+	}
 	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
 		"success": "true",
 		"message": "otp sent successfully",
+	})
+}
+func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Otp   string `json:"otp"`
+		Email string `json:"email"`
+	}
+	Utils.ParseJSON(r, &req)
+	ok, err := h.svc.VerifyOTPService(req.Email, req.Otp)
+	if ok {
+		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+			"success": false,
+			"message": err,
+		})
+	}
+	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
+		"success": "true",
+		"message": "OTP sent successfully",
 	})
 }
