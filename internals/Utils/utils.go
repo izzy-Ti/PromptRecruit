@@ -2,8 +2,10 @@ package Utils
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net/http"
 	"os"
 )
@@ -65,4 +67,8 @@ func Sendemail(toEmail, toName, subject, htmlContent string) error {
 	}
 
 	return nil
+}
+func GenerateOTP() string {
+	n, _ := rand.Int(rand.Reader, big.NewInt(900000))
+	return fmt.Sprintf("%06d", n.Int64()+100000)
 }

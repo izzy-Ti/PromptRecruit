@@ -67,3 +67,26 @@ func (s *UserService) LoginService(email, password string) (*models.User, string
 	}
 	return user, tokenString, nil
 }
+func (s *UserService) SendVerifyOTPService(email string) (bool, error) {
+	otp := Utils.GenerateOTP()
+	expiresAt := time.Now().Add(24 * time.Hour).UnixMilli()
+
+	user, err := s.repo.UpdateUserOTP(email, otp, int64(expiresAt))
+	if err != nil {
+		return false, err
+	}
+	subject := "OTP verfication"
+	html := fmt.Sprintf(`
+		<p>Hi %s,</p>
+		<p>Your one-time verification code is:</p>
+		<h2 style="letter-spacing:2px;">%s</h2>
+		<p>This code will expire soon. Do not share it with anyone.</p>
+		<p>If you didn’t request this, you can ignore this email.</p>
+	`, user.Name, user.VerifyOTP)
+
+	err = Utils.Sendemail(user.Email, user.Name, subject, html)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}

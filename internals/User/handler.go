@@ -62,3 +62,29 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		"message": "Registration success",
 	})
 }
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    "",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		Path:     "/",
+		MaxAge:   -1,
+	})
+	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
+		"success": "true",
+		"message": "logout successful",
+	})
+}
+func (h *AuthHandler) SendVerifyOTP(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Email string `json:"email"`
+	}
+	Utils.ParseJSON(r, &req)
+	h.svc.SendVerifyOTPService(req.Email)
+	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
+		"success": "true",
+		"message": "otp sent successfully",
+	})
+}

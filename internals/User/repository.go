@@ -40,3 +40,13 @@ func (r *UserRepository) RegisterUser(email, name, password string) error {
 	}
 	return nil
 }
+func (r *UserRepository) UpdateUserOTP(email, VerifyOTP string, OTPExpireAt int64) (*models.User, error) {
+	user, err := r.GetByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	user.VerifyOTP = VerifyOTP
+	user.OTPExpireAt = OTPExpireAt
+	r.db.Save(user)
+	return user, nil
+}
