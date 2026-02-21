@@ -43,3 +43,22 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		"user_id": user.ID,
 	})
 }
+func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Name     string `json:"name"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	Utils.ParseJSON(r, &req)
+	ok, err := h.svc.RegisterService(req.Email, req.Password, req.Name)
+	if ok {
+		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+			"success": false,
+			"message": err,
+		})
+	}
+	Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+		"success": false,
+		"message": "Registration success",
+	})
+}
