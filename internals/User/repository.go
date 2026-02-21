@@ -1,6 +1,8 @@
 package user
 
 import (
+	"errors"
+
 	models "github.com/izzy-Ti/PromptRecruit/internals/Models"
 	"gorm.io/gorm"
 )
@@ -18,4 +20,23 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+func (r *UserRepository) CheckForEmail(email string) bool {
+	var userModel models.User
+	UserEmail := r.db.Where("email = ?", email).First(&userModel).Error
+	if UserEmail == nil {
+		return false
+	}
+	return true
+}
+func (r *UserRepository) RegisterUser(email, name, password string) error {
+	user := models.User{
+		Name:     name,
+		Email:    email,
+		Password: string(password),
+	}
+	if err := r.db.Create(&user).Error; err != nil {
+		return errors.New("Error saving user")
+	}
+	return nil
 }

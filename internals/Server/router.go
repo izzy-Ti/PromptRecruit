@@ -7,5 +7,5 @@ import (
 
 func Auth(r *mux.Router) {
 	userAuth := r.PathPrefix("/user").Subrouter()
-	userAuth.HandleFunc("/register", user.Register).Methods("POST")
+	userAuth.HandleFunc("/Login", user.Login).Methods("POST")
 }

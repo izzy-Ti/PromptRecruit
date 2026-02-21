@@ -2,10 +2,12 @@ package user
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	models "github.com/izzy-Ti/PromptRecruit/internals/Models"
+	"github.com/izzy-Ti/PromptRecruit/internals/Utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -18,7 +20,33 @@ func NewUserService(repo *UserRepository, secret string) *UserService {
 	return &UserService{repo: repo, jwtSecrete: []byte(secret)}
 }
 
-func (s *UserService) Login(email, password string) (*models.User, string, error) {
+func (s *UserService) RegisterService(email, password, name string) (bool, error) {
+	user, err := s.repo.GetByEmail(email)
+	if err != nil {
+		return false, errors.New("invalid email or password")
+	}
+	if user != nil {
+		return false, errors.New("email already exist")
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err := s.repo.RegisterUser(email, name, string(hashedPassword)); err != nil {
+		return false, err
+	}
+	verificationUrl := ""
+	subject := "Registration successful"
+	html := fmt.Sprintf(`
+        <p>Hi %s,</p>
+        <p>Welcome! Please verify your email by clicking the link below:</p>
+        <a href="%s">Verify Email</a>
+        <p>If this wasn’t you, please ignore this email.</p>
+    `, name, verificationUrl)
+	err = Utils.Sendemail(email, name, subject, html)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+func (s *UserService) LoginService(email, password string) (*models.User, string, error) {
 	user, err := s.repo.GetByEmail(email)
 	if err != nil {
 		return nil, "", errors.New("invalid email or password")
