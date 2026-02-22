@@ -137,3 +137,54 @@ func (s *UserService) ValidateToken(tokenstr string) (*models.User, error) {
 
 	return user, nil
 }
+func (s *UserService) SendResetOTPSerive(email string) (bool, error) {
+	expiresAt := time.Now().Add(24 * time.Hour).UnixMilli()
+	ResetOTP := Utils.GenerateOTP()
+	user, err := s.repo.SaveResetOTP(email, ResetOTP, expiresAt)
+	if err != nil {
+		return false, err
+	}
+	subject := "Reset Password OTP verfication"
+	html := fmt.Sprintf(`
+		<p>Hi %s,</p>
+		<p>Your one-time verification code is:</p>
+		<h2 style="letter-spacing:2px;">%s</h2>
+		<p>This code will expire soon. Do not share it with anyone.</p>
+		<p>If you didn’t request this, you can ignore this email.</p>
+	`, user.Name, user.ResetOTP)
+
+	err = Utils.Sendemail(user.Email, user.Name, subject, html)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+func (s *UserService) ResetPasswordService(otp, email, password string) (bool, error) {
+	user, err := s.repo.GetByEmail(email)
+	if err != nil {
+		return false, err
+	}
+	if user.ResetOTP != otp || user.ResetOTP == "" {
+		return false, errors.New("Ïnvalid otp")
+	}
+	if user.ResetOTPExpireAt < time.Now().UnixMilli() {
+		return false, errors.New("otp expired")
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	_, err = s.repo.VerifyResetOTPRepo(email, string(hashedPassword))
+	if err != nil {
+		return false, err
+	}
+	subject := "Password reset successful"
+	html := fmt.Sprintf(`
+		<p>Hi,%s</p>
+		<p>Your password has been successfully reset.</p>
+		<p>If you made this change, you can now log in with your new password.</p>
+		<p>If you did not request this password reset, please contact support immediately to secure your account.</p>
+	`, user.Name)
+	err = Utils.Sendemail(user.Email, user.Name, subject, html)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}

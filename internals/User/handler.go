@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	models "github.com/izzy-Ti/PromptRecruit/internals/Models"
 	"github.com/izzy-Ti/PromptRecruit/internals/Utils"
 )
 
@@ -110,5 +111,49 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
 		"success": "true",
 		"message": "OTP sent successfully",
+	})
+}
+func (h *AuthHandler) AuthUser(w http.ResponseWriter, r *http.Request) {
+	user, _ := r.Context().Value("user").(*models.User)
+	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "User authorized",
+		"user":    user,
+	})
+}
+func (h *AuthHandler) SendResetOTP(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Email string `json:"email"`
+	}
+	Utils.ParseJSON(r, &req)
+	ok, err := h.svc.SendResetOTPSerive(req.Email)
+	if !ok {
+		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+			"success": false,
+			"message": err,
+		})
+	}
+	Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+		"success": true,
+		"message": "OTP sent successfull",
+	})
+}
+func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Otp      string `json:"otp"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	Utils.ParseJSON(r, &req)
+	ok, err := h.svc.ResetPasswordService(req.Otp, req.Email, req.Password)
+	if !ok {
+		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+			"success": false,
+			"message": err,
+		})
+	}
+	Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+		"success": true,
+		"message": "Password reset successful",
 	})
 }

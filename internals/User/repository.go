@@ -68,3 +68,24 @@ func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
 	}
 	return &user, nil
 }
+func (r *UserRepository) SaveResetOTP(email, ResetOTP string, OTPExpireAt int64) (*models.User, error) {
+	user, err := r.GetByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	user.VerifyOTP = ResetOTP
+	user.OTPExpireAt = OTPExpireAt
+	r.db.Save(user)
+	return user, nil
+}
+func (r *UserRepository) VerifyResetOTPRepo(email, password string) (*models.User, error) {
+	user, err := r.GetByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	user.ResetOTP = ""
+	user.ResetOTPExpireAt = 0
+	user.Password = password
+	r.db.Save(user)
+	return user, nil
+}
