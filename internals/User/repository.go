@@ -61,3 +61,10 @@ func (r *UserRepository) VerifyOTPRepo(email string) (*models.User, error) {
 	r.db.Save(user)
 	return user, nil
 }
+func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
+	var user models.User
+	if err := r.db.Where("id = ?", id).Find(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

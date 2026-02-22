@@ -16,9 +16,9 @@ func main() {
 	db.Connect()
 	db.Migrate()
 	handler := server.New().PathPrefix("/api/v1").Subrouter()
-	server.Auth(handler)
+	server.Auth(handler, db.DB, os.Getenv("JWT_SECRET"))
 
-	log.Printf("Listening on " + os.Getenv("PORT"))
+	log.Print("Listening on " + os.Getenv("PORT"))
 
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), handler))
 }

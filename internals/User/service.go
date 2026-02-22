@@ -12,12 +12,12 @@ import (
 )
 
 type UserService struct {
-	repo       *UserRepository
-	jwtSecrete []byte
+	repo      *UserRepository
+	jwtSecret []byte
 }
 
 func NewUserService(repo *UserRepository, secret string) *UserService {
-	return &UserService{repo: repo, jwtSecrete: []byte(secret)}
+	return &UserService{repo: repo, jwtSecret: []byte(secret)}
 }
 
 func (s *UserService) RegisterService(email, password, name string) (bool, error) {
@@ -61,7 +61,7 @@ func (s *UserService) LoginService(email, password string) (*models.User, string
 		"user_id": user.ID,
 		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	})
-	tokenString, err := token.SignedString(s.jwtSecrete)
+	tokenString, err := token.SignedString(s.jwtSecret)
 	if err != nil {
 		return nil, "", err
 	}
@@ -114,4 +114,26 @@ func (s *UserService) VerifyOTPService(email, otp string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+func (s *UserService) ValidateToken(tokenstr string) (*models.User, error) {
+	token, err := jwt.Parse(tokenstr, func(t *jwt.Token) (any, error) {
+		if t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+			return nil, errors.New("unexpected signing method")
+		}
+		return s.jwtSecret, nil
+	})
+	if err != nil {
+		return nil, errors.New("invalid token")
+	}
+	claims := token.Claims.(jwt.MapClaims)
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		return nil, errors.New("sub not found")
+	}
+	user, err := s.repo.GetUserByID(uint(userID))
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
