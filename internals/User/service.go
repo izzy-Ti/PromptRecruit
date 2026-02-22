@@ -43,7 +43,9 @@ func (s *UserService) RegisterService(email, password, name string) (bool, error
         <a href="%s">Verify Email</a>
         <p>If this wasn’t you, please ignore this email.</p>
     `, name, verificationUrl)
-	err = Utils.Sendemail(email, name, subject, html)
+	go func() {
+		err = Utils.Sendemail(email, name, subject, html)
+	}()
 	if err != nil {
 		return false, err
 	}
@@ -86,8 +88,9 @@ func (s *UserService) SendVerifyOTPService(email string) (bool, error) {
 		<p>This code will expire soon. Do not share it with anyone.</p>
 		<p>If you didn’t request this, you can ignore this email.</p>
 	`, user.Name, user.VerifyOTP)
-
-	err = Utils.Sendemail(user.Email, user.Name, subject, html)
+	go func() {
+		err = Utils.Sendemail(user.Email, user.Name, subject, html)
+	}()
 	if err != nil {
 		return false, err
 	}
@@ -111,8 +114,9 @@ func (s *UserService) VerifyOTPService(email, otp string) (bool, error) {
 		<p>You can now sign in and start using your account.</p>
 		<p>If you did not perform this action, you can reply to this email directly.</p>
 	`, user.Name)
-
-	err = Utils.Sendemail(user.Email, user.Name, subject, html)
+	go func() {
+		err = Utils.Sendemail(user.Email, user.Name, subject, html)
+	}()
 	if err != nil {
 		return false, err
 	}
@@ -155,8 +159,9 @@ func (s *UserService) SendResetOTPSerive(email string) (bool, error) {
 		<p>This code will expire soon. Do not share it with anyone.</p>
 		<p>If you didn’t request this, you can ignore this email.</p>
 	`, user.Name, user.ResetOTP)
-
-	err = Utils.Sendemail(user.Email, user.Name, subject, html)
+	go func() {
+		err = Utils.Sendemail(user.Email, user.Name, subject, html)
+	}()
 	if err != nil {
 		return false, err
 	}
@@ -185,7 +190,9 @@ func (s *UserService) ResetPasswordService(otp, email, password string) (bool, e
 		<p>If you made this change, you can now log in with your new password.</p>
 		<p>If you did not request this password reset, please contact support immediately to secure your account.</p>
 	`, user.Name)
-	err = Utils.Sendemail(user.Email, user.Name, subject, html)
+	go func() {
+		err = Utils.Sendemail(user.Email, user.Name, subject, html)
+	}()
 	if err != nil {
 		return false, err
 	}
