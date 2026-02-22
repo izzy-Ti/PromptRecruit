@@ -89,3 +89,29 @@ func (r *UserRepository) VerifyResetOTPRepo(email, password string) (*models.Use
 	r.db.Save(user)
 	return user, nil
 }
+func (r *UserRepository) GoogleRepo(email, name, picture, sub string) (bool, error) {
+	var user models.User
+
+	err := r.db.Where("email=?", email).First(&user).Error
+	if err != nil {
+		user = models.User{
+			Name:          name,
+			Email:         email,
+			Avater:        picture,
+			GoogleId:      sub,
+			AuthType:      "google",
+			IsAccVerified: true,
+		}
+		r.db.Create(&user)
+	} else {
+		if !user.IsAccVerified {
+			user.Name = name
+			user.Avater = picture
+			user.GoogleId = sub
+			user.AuthType = "google"
+			user.IsAccVerified = true
+			r.db.Save(&user)
+		}
+	}
+	return true, nil
+}

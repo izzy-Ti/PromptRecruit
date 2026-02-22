@@ -157,3 +157,29 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 		"message": "Password reset successful",
 	})
 }
+func (h *AuthHandler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Token string `json:"token"`
+	}
+	Utils.ParseJSON(r, &req)
+	ok, err, token := h.svc.GoogleService(req.Token)
+	if !ok {
+		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+			"success": false,
+			"message": err,
+		})
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    token,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		Path:     "/",
+		Expires:  time.Now().Add(24 * time.Hour),
+	})
+	Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+		"success": true,
+		"message": "Login successful",
+	})
+}

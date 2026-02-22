@@ -1,14 +1,17 @@
 package user
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	models "github.com/izzy-Ti/PromptRecruit/internals/Models"
 	"github.com/izzy-Ti/PromptRecruit/internals/Utils"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/api/idtoken"
 )
 
 type UserService struct {
@@ -187,4 +190,29 @@ func (s *UserService) ResetPasswordService(otp, email, password string) (bool, e
 		return false, err
 	}
 	return true, nil
+}
+func (s *UserService) GoogleService(Gotoken string) (bool, error, string) {
+	payload, err := idtoken.Validate(context.Background(), Gotoken, os.Getenv("GOOGLE_CLIENT_ID"))
+	if err != nil {
+		return false, err, ""
+	}
+	email := payload.Claims["email"].(string)
+	name := payload.Claims["name"].(string)
+	picture, _ := payload.Claims["picture"].(string)
+	sub := payload.Claims["sub"].(string)
+	s.repo.GoogleRepo(email, name, picture, sub)
+
+	user, err := s.repo.GetByEmail(email)
+	if err != nil {
+		return false, err, ""
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": user.ID,
+		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+	})
+	tokenString, err := token.SignedString(s.jwtSecret)
+	if err != nil {
+		return false, err, ""
+	}
+	return true, nil, tokenString
 }
