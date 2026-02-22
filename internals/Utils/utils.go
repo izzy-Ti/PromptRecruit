@@ -29,7 +29,7 @@ func WriteError(w http.ResponseWriter, status int, err error) {
 func Sendemail(toEmail, toName, subject, htmlContent string) error {
 	body := map[string]interface{}{
 		"sender": map[string]string{
-			"name":  "GORag",
+			"name":  "PromptRecruit",
 			"email": os.Getenv("EMAIL"),
 		},
 		"to": []map[string]string{

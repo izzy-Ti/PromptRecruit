@@ -52,14 +52,15 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 	Utils.ParseJSON(r, &req)
 	ok, err := h.svc.RegisterService(req.Email, req.Password, req.Name)
-	if ok {
+	if !ok {
 		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
+		return
 	}
-	Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
-		"success": false,
+	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
+		"success": true,
 		"message": "Registration success",
 	})
 }
@@ -74,7 +75,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   -1,
 	})
 	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
-		"success": "true",
+		"success": true,
 		"message": "logout successful",
 	})
 }
@@ -84,14 +85,15 @@ func (h *AuthHandler) SendVerifyOTP(w http.ResponseWriter, r *http.Request) {
 	}
 	Utils.ParseJSON(r, &req)
 	ok, err := h.svc.SendVerifyOTPService(req.Email)
-	if ok {
+	if !ok {
 		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
+		return
 	}
 	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
-		"success": "true",
+		"success": true,
 		"message": "otp sent successfully",
 	})
 }
@@ -102,14 +104,15 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 	}
 	Utils.ParseJSON(r, &req)
 	ok, err := h.svc.VerifyOTPService(req.Email, req.Otp)
-	if ok {
+	if !ok {
 		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
+		return
 	}
 	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
-		"success": "true",
+		"success": true,
 		"message": "OTP sent successfully",
 	})
 }
@@ -130,10 +133,11 @@ func (h *AuthHandler) SendResetOTP(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
+		return
 	}
-	Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
 		"success": true,
 		"message": "OTP sent successfull",
 	})
@@ -149,10 +153,11 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
+		return
 	}
-	Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
 		"success": true,
 		"message": "Password reset successful",
 	})
@@ -166,8 +171,9 @@ func (h *AuthHandler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
+		return
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "token",
@@ -178,7 +184,7 @@ func (h *AuthHandler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Expires:  time.Now().Add(24 * time.Hour),
 	})
-	Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
 		"success": true,
 		"message": "Login successful",
 	})

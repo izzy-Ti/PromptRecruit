@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -45,10 +46,14 @@ func (s *UserService) RegisterService(email, password, name string) (bool, error
     `, name, verificationUrl)
 	go func() {
 		err = Utils.Sendemail(email, name, subject, html)
+		if err != nil {
+			log.Printf("Background Email Error: %v", err)
+		}
 	}()
-	if err != nil {
-		return false, err
-	}
+	// err = Utils.Sendemail(email, name, subject, html)
+	// if err != nil {
+	// 	return false, err
+	// }
 	return true, nil
 }
 func (s *UserService) LoginService(email, password string) (*models.User, string, error) {
