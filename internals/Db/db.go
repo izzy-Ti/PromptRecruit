@@ -23,7 +23,7 @@ func Connect() {
 	}
 }
 func Migrate() {
-	err := DB.AutoMigrate(&models.User{})
+	err := DB.AutoMigrate(&models.User{}, &models.KnowledgeChunk{})
 	if err != nil {
 		log.Fatal("Migration failed:", err)
 	}
