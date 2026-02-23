@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func EmbedText(txt string) ([]float32, error) {
+func VectorizeText(txt string) ([]float32, error) {
 	body := map[string]interface{}{
 		"model": "voyage-3-large",
 		"input": []string{txt},
@@ -66,14 +66,13 @@ func ChunkText(text string, size int) []string {
 		}
 		chunks = append(chunks, string(runes[i:end]))
 	}
-
 	return chunks
 }
-func SaveProcessedChunks(db *gorm.DB, text string) error {
+func EmbedText(db *gorm.DB, text string) error {
 	chunks := ChunkText(text, 500)
 
 	for i, chunkContent := range chunks {
-		vectorValues, err := EmbedText(text)
+		vectorValues, err := VectorizeText(text)
 		if err != nil {
 			return fmt.Errorf("failed to embed chunk %d: %v", i, err)
 		}
