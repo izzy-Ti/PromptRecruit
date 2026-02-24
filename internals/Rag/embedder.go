@@ -68,7 +68,7 @@ func ChunkText(text string, size int) []string {
 	}
 	return chunks
 }
-func EmbedText(db *gorm.DB, text string) error {
+func EmbedText(db *gorm.DB, text, SourceURL string) error {
 	chunks := ChunkText(text, 500)
 
 	for i, chunkContent := range chunks {
@@ -77,9 +77,9 @@ func EmbedText(db *gorm.DB, text string) error {
 			return fmt.Errorf("failed to embed chunk %d: %v", i, err)
 		}
 		saveRecord := models.KnowledgeChunk{
-			Content: chunkContent,
-			Source:  "PDF",
-			Vector:  pgvector.NewVector(vectorValues),
+			Content:   chunkContent,
+			SourceURL: SourceURL,
+			Vector:    pgvector.NewVector(vectorValues),
 		}
 
 		if err := db.Create(&saveRecord).Error; err != nil {
@@ -87,4 +87,7 @@ func EmbedText(db *gorm.DB, text string) error {
 		}
 	}
 	return nil
+}
+func PDFExtractor() {
+
 }
