@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"os"
 
-	models "github.com/izzy-Ti/PromptRecruit/internals/Models"
-	"github.com/pgvector/pgvector-go"
 	"gorm.io/gorm"
 )
+
+var db *gorm.DB
 
 func VectorizeText(txt string) ([]float32, error) {
 	body := map[string]interface{}{
@@ -68,26 +68,17 @@ func ChunkText(text string, size int) []string {
 	}
 	return chunks
 }
-func EmbedText(db *gorm.DB, text, SourceURL string) error {
+func EmbedText(text string) ([][]float32, error) {
 	chunks := ChunkText(text, 500)
 
+	var allVec [][]float32
+
 	for i, chunkContent := range chunks {
-		vectorValues, err := VectorizeText(text)
+		vectorValues, err := VectorizeText(chunkContent)
 		if err != nil {
-			return fmt.Errorf("failed to embed chunk %d: %v", i, err)
+			return nil, fmt.Errorf("failed to embed chunk %d: %v", i, err)
 		}
-		saveRecord := models.KnowledgeChunk{
-			Content:   chunkContent,
-			SourceURL: SourceURL,
-			Vector:    pgvector.NewVector(vectorValues),
-		}
-
-		if err := db.Create(&saveRecord).Error; err != nil {
-			return fmt.Errorf("failed to save chunk %d to db: %v", i, err)
-		}
+		allVec = append(allVec, vectorValues)
 	}
-	return nil
-}
-func PDFExtractor() {
-
+	return allVec, nil
 }

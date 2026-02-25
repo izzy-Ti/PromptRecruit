@@ -9,4 +9,5 @@ type KnowledgeChunk struct {
 	SourceURL string
 	Uploadby  uint
 	User      User `gorm:"foreignKey:Uploadby"`
+	Appliers  string
 }
