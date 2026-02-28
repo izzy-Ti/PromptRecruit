@@ -12,13 +12,19 @@ import (
 	"github.com/pgvector/pgvector-go"
 )
 
-func UploadCV(w http.ResponseWriter, r *http.Request) {
-
+type NewHandler struct {
+	svc *CVservice
 }
-func CVsender(w http.ResponseWriter, r *http.Request) {
-	var req struct{
-		JobId 
+
+func NewCVHnadler(svc *CVservice) *NewHandler {
+	return &NewHandler{svc: svc}
+}
+
+func CVUploader(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		JobId string
 	}
+	Utils.ParseJSON(r, &req)
 	file, header, err := r.FormFile("file")
 	user, _ := r.Context().Value("user").(*models.User)
 	if err != nil {
@@ -59,16 +65,18 @@ func CVsender(w http.ResponseWriter, r *http.Request) {
 		content, _ := page.GetPlainText(nil)
 		pdfText.WriteString(content)
 	}
-	var knowledgeChunks []models.KnowledgeChunk
+	var cvs []models.Cvs
 	chunks := rag.ChunkText(pdfText.String(), 500)
 	vecs, err := rag.EmbedText(pdfText.String())
 	for i, vec := range vecs {
-		knowledgeChunks = append(knowledgeChunks, models.KnowledgeChunk{
+		cvs = append(cvs, models.Cvs{
 			Content:   chunks[i],
 			Vector:    pgvector.NewVector(vec),
 			SourceURL: fileUrl,
 			Uploadby:  user.ID,
 		})
 	}
+}
+func Application(w http.ResponseWriter, r *http.Request) {
 
 }

@@ -58,13 +58,16 @@ func ChunkText(text string, size int) []string {
 	var chunks []string
 	runes := []rune(text)
 
-	for i := 0; i < len(runes); i += size {
+	for i := 0; i < len(runes); i += (size - 100) {
 		end := i + size
 
 		if end > len(runes) {
 			end = len(runes)
 		}
 		chunks = append(chunks, string(runes[i:end]))
+		if end == len(runes) {
+			break
+		}
 	}
 	return chunks
 }

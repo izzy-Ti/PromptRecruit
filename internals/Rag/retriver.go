@@ -14,9 +14,9 @@ func Retriver(db *gorm.DB, query string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var docs []models.KnowledgeChunk
+	var docs []models.Cvs
 	err = db.WithContext(ctx).
-		Model(&models.KnowledgeChunk{}).
+		Model(&models.Cvs{}).
 		Select("content").
 		Order(gorm.Expr("embedding <-> ?", queryVec)).
 		Limit(3).

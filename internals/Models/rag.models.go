@@ -2,7 +2,7 @@ package models
 
 import "github.com/pgvector/pgvector-go"
 
-type KnowledgeChunk struct {
+type Cvs struct {
 	ID        uint            `gorm:"primaryKey"`
 	Content   string          `gorm:"not null"`
 	Vector    pgvector.Vector `gorm:"type:vector(1024);not null"`
