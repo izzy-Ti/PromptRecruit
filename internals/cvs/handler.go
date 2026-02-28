@@ -15,8 +15,10 @@ import (
 func UploadCV(w http.ResponseWriter, r *http.Request) {
 
 }
-
-func UploadHand(w http.ResponseWriter, r *http.Request) {
+func CVsender(w http.ResponseWriter, r *http.Request) {
+	var req struct{
+		JobId 
+	}
 	file, header, err := r.FormFile("file")
 	user, _ := r.Context().Value("user").(*models.User)
 	if err != nil {
