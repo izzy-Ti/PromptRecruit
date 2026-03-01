@@ -11,6 +11,15 @@ func NewUserService(repo *CvRepo) *CVservice {
 func CvUploadSvc() {
 
 }
-func ApplicationService() {
+func (s *CVservice) ApplicationService(userId, JobId uint) (bool, error) {
+	ok, err, jobVec := s.repo.GetJobByID(JobId)
+	if !ok {
+		return false, err
+	}
+	ok, err, Cvec := s.repo.GetUserCv(userId)
+	if !ok {
+		return false, err
+	}
 
+	return true, nil
 }
