@@ -11,3 +11,6 @@ func NewUserService(repo *CvRepo) *CVservice {
 func CvUploadSvc() {
 
 }
+func ApplicationService() {
+
+}
