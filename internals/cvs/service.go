@@ -12,14 +12,10 @@ func CvUploadSvc() {
 
 }
 func (s *CVservice) ApplicationService(userId, JobId uint) (bool, error) {
-	ok, err, jobVec := s.repo.GetJobByID(JobId)
-	if !ok {
-		return false, err
-	}
-	ok, err, Cvec := s.repo.GetUserCv(userId)
-	if !ok {
-		return false, err
-	}
-
+	jobVec := 
+	cv, err := s.repo.GetTopMatchingCvs()
 	return true, nil
+}
+func (s *CVservice) ApplicationService(){
+
 }
