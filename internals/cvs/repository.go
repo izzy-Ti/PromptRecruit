@@ -21,18 +21,18 @@ type ScoredCv struct {
 	Score float64
 }
 
-func (r *CvRepo) ApplicationSaver(jobId, userId uint, score float32) (bool, error) {
+func (r *CvRepo) ApplicationSaver(jobId, userId uint) (bool, error) {
+
 	App := models.Application{
 		JobID:  jobId,
 		UserID: userId,
-		Score:  score,
 	}
 	if err := r.db.Create(&App).Error; err != nil {
 		return false, err
 	}
 	return true, nil
 }
-func (r *CvRepo) GetUserCv(jobId uint) (bool, error, [][]float32) {
+func (r *CvRepo) GetUsersCv(jobId uint) (bool, error, [][]float32) {
 	var Apps []models.Application
 	var dbCvs []models.Cvs
 	var allUserCvs [][]float32

@@ -76,6 +76,9 @@ func CVUploader(w http.ResponseWriter, r *http.Request) {
 			Uploadby:  user.ID,
 		})
 	}
+	for _, cv := range cvs {
+		_ = svc.repo.db.Create(&cv)
+	}
 }
 func Application(w http.ResponseWriter, r *http.Request) {
 
