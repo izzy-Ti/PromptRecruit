@@ -2,6 +2,7 @@ package cvs
 
 import (
 	"fmt"
+	"strings"
 
 	models "github.com/izzy-Ti/PromptRecruit/internals/Models"
 	"github.com/pgvector/pgvector-go"
@@ -21,11 +22,12 @@ type ScoredCv struct {
 	Score float64
 }
 
-func (r *CvRepo) ApplicationSaver(jobId, userId uint) (bool, error) {
+func (r *CvRepo) ApplicationSaver(jobId, userId uint, score uint) (bool, error) {
 
 	App := models.Application{
 		JobID:  jobId,
 		UserID: userId,
+		Score:  float32(score),
 	}
 	if err := r.db.Create(&App).Error; err != nil {
 		return false, err
@@ -58,18 +60,22 @@ func (r *CvRepo) GetUsersCv(jobId uint) (bool, error, [][]float32) {
 	}
 	return true, nil, allUserCvs
 }
-func (r *CvRepo) GetJobByID(jobID uint) (bool, error, [][]float32) {
+func (r *CvRepo) GetJobByID(jobID uint) (bool, error, [][]float32, string) {
 	var job []models.Jobs
 	var jobVec [][]float32
 
+	var jobContent []string
+
 	err := r.db.Where("ID = ?", jobID).Find(&job).Error
 	if err != nil {
-		return false, err, nil
+		return false, err, nil, ""
 	}
 	for _, vec := range job {
 		jobVec = append(jobVec, vec.Vector.Slice())
+		jobContent = append(jobContent, vec.Content)
 	}
-	return true, nil, jobVec
+	fullContent := strings.Join(jobContent, " ")
+	return true, nil, jobVec, fullContent
 }
 func (r *CvRepo) GetTopMatchingCvs(jobVector []float32, topK int) ([]ScoredCv, error) {
 	var results []ScoredCv

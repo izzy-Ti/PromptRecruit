@@ -20,7 +20,7 @@ func NewCVHnadler(svc *CVservice) *NewHandler {
 	return &NewHandler{svc: svc}
 }
 
-func CVUploader(w http.ResponseWriter, r *http.Request) {
+func (s *NewHandler) CVUploader(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		JobId string
 	}
@@ -77,9 +77,13 @@ func CVUploader(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	for _, cv := range cvs {
-		_ = svc.repo.db.Create(&cv)
+		_ = s.svc.repo.db.Create(&cv)
 	}
 }
-func Application(w http.ResponseWriter, r *http.Request) {
+func (s *NewHandler) Application(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		jobId uint
+	}
+	Utils.ParseJSON(r, &req)
 
 }

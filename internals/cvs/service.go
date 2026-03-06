@@ -21,11 +21,16 @@ func CvUploadSvc() {
 
 }
 
-func (s *CVservice) ApplicationService(userId, JobId uint) (bool, error) {
-
+func (s *CVservice) ApplicationService(cv string, userId, JobId uint) (bool, error) {
+	ok, err, _, content := s.repo.GetJobByID(JobId)
+	if !ok {
+		return false, err
+	}
+	score, err := UserScore(content, cv)
+	s.repo.ApplicationSaver(JobId, userId, score)
 	return true, nil
 }
-func (r *CvRepo) UserScore(job, userCv string) (int, error) {
+func UserScore(job, userCv string) (float32, error) {
 	body := map[string]interface{}{
 		"model": "moonshotai/kimi-k2-instruct-0905",
 		"messages": []map[string]string{
@@ -99,7 +104,7 @@ func (r *CvRepo) UserScore(job, userCv string) (int, error) {
 	content := groqResp.Message[0].Content
 	fmt.Println("Groq returned:", content)
 	var scoreStruct struct {
-		Score int `json:"score"`
+		Score float32 `json:"score"`
 	}
 
 	if err := json.Unmarshal([]byte(content), &scoreStruct); err != nil {
