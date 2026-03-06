@@ -7,6 +7,7 @@ import (
 
 	db "github.com/izzy-Ti/PromptRecruit/internals/Db"
 	server "github.com/izzy-Ti/PromptRecruit/internals/Server"
+	"github.com/izzy-Ti/PromptRecruit/internals/config"
 	"github.com/joho/godotenv"
 )
 
@@ -15,8 +16,9 @@ func main() {
 
 	db.Connect()
 	db.Migrate()
+	config.Cloudinary()
 	handler := server.New().PathPrefix("/api/v1").Subrouter()
-	server.Auth(handler, db.DB, os.Getenv("JWT_SECRET"))
+	server.SetupRoutes(handler, db.DB, os.Getenv("JWT_SECRET"))
 
 	log.Print("Listening on " + os.Getenv("PORT"))
 

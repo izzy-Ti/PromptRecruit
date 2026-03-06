@@ -2,6 +2,7 @@ package cvs
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -23,11 +24,18 @@ func NewCVHnadler(svc *CVservice) *NewHandler {
 
 func (s *NewHandler) CVUploader(w http.ResponseWriter, r *http.Request) {
 	file, header, err := r.FormFile("file")
-	user, _ := r.Context().Value("user").(*models.User)
-	if err != nil {
-		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+	if err != nil || file == nil {
+		Utils.WriteJson(w, http.StatusBadRequest, map[string]interface{}{
 			"success": false,
-			"message": err,
+			"message": "No file uploaded",
+		})
+		return
+	}
+	user, _ := r.Context().Value("user").(*models.User)
+	if user == nil {
+		Utils.WriteJson(w, http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"message": "No user given",
 		})
 		return
 	}
@@ -37,7 +45,7 @@ func (s *NewHandler) CVUploader(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
 		return
 	}
@@ -48,7 +56,7 @@ func (s *NewHandler) CVUploader(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
 		return
 	}
@@ -65,6 +73,13 @@ func (s *NewHandler) CVUploader(w http.ResponseWriter, r *http.Request) {
 	var cvs []models.Cvs
 	chunks := rag.ChunkText(pdfText.String(), 500)
 	vecs, err := rag.EmbedText(pdfText.String())
+	if err != nil {
+		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
 	for i, vec := range vecs {
 		cvs = append(cvs, models.Cvs{
 			Content:   chunks[i],
@@ -76,17 +91,21 @@ func (s *NewHandler) CVUploader(w http.ResponseWriter, r *http.Request) {
 	for _, cv := range cvs {
 		_ = s.svc.repo.db.Create(&cv)
 	}
+	Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+		"success": true,
+		"message": "CV uploaded successfully",
+	})
 }
 func (s *NewHandler) Application(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	jobId, ok := vars["jobId"]
-
+	jobIdin, err := strconv.Atoi(jobId)
 	user, _ := r.Context().Value("user").(*models.User)
-	ok, err := s.svc.ApplicationService(user.ID, jobId)
+	ok, err = s.svc.ApplicationService(user.ID, uint(jobIdin))
 	if !ok {
 		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
 			"success": false,
-			"message": err,
+			"message": err.Error(),
 		})
 		return
 	}

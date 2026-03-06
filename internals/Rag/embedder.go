@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -28,6 +30,9 @@ func VectorizeText(txt string) ([]float32, error) {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if os.Getenv("VOYAGE_API_KEY") == "" {
+		return nil, fmt.Errorf("VOYAGE_API_KEY not set")
+	}
 	req.Header.Set("Authorization", "Bearer "+os.Getenv("VOYAGE_API_KEY"))
 	client := &http.Client{}
 	res, err := client.Do(req)
@@ -77,11 +82,17 @@ func EmbedText(text string) ([][]float32, error) {
 	var allVec [][]float32
 
 	for i, chunkContent := range chunks {
+		if strings.TrimSpace(chunkContent) == "" {
+			continue
+		}
 		vectorValues, err := VectorizeText(chunkContent)
 		if err != nil {
 			return nil, fmt.Errorf("failed to embed chunk %d: %v", i, err)
 		}
 		allVec = append(allVec, vectorValues)
+		time.Sleep(25 * time.Second)
+		fmt.Println(i)
+
 	}
 	return allVec, nil
 }
