@@ -1,6 +1,8 @@
 package cvs
 
 import (
+	"fmt"
+
 	models "github.com/izzy-Ti/PromptRecruit/internals/Models"
 	rag "github.com/izzy-Ti/PromptRecruit/internals/Rag"
 	"github.com/pgvector/pgvector-go"
@@ -35,7 +37,7 @@ func (s *CVservice) ApplicationService(userId, JobId uint) (bool, error) {
 	return true, nil
 }
 func (s *CVservice) jobAddService(Title, content string, userId uint) (bool, error) {
-	var jobChunk []models.JobChunk
+	//var jobChunk []models.JobChunk
 
 	chunks := rag.ChunkText(content, 500)
 	vecs, err := rag.EmbedText(content)
@@ -44,23 +46,32 @@ func (s *CVservice) jobAddService(Title, content string, userId uint) (bool, err
 		return false, err
 	}
 
-	job := models.Jobs{
+	job := &models.Jobs{
 		Title:    Title,
 		Content:  content,
 		Uploadby: userId,
 	}
-	s.repo.JobAdder(job)
+	if ok, err := s.repo.JobAdder(job); !ok || err != nil {
+		return false, err
+	}
 
 	for i, vec := range vecs {
-		jobChunk = append(jobChunk, models.JobChunk{
+		if len(vec) == 0 {
+			continue
+		}
+		jobChunk := models.JobChunk{
 			JobID:   job.ID,
 			Vector:  pgvector.NewVector(vec),
 			Content: chunks[i],
-		})
+		}
+		fmt.Print(vec)
+		if ok, err := s.repo.JobChunkSaver(jobChunk); !ok || err != nil {
+			return false, err
+		}
 	}
-	for _, chunk := range jobChunk {
-		s.repo.JobChunkSaver(chunk)
-	}
+	// for _, chunk := range jobChunk {
+	// 	s.repo.JobChunkSaver(chunk)
+	// }
 
 	return true, nil
 }

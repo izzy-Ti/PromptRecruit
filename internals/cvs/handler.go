@@ -129,7 +129,7 @@ func (s *NewHandler) JobPost(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+	Utils.WriteJson(w, http.StatusAccepted, map[string]interface{}{
 		"success": true,
 		"message": "job post successfully",
 	})

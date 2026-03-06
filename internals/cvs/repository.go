@@ -109,8 +109,8 @@ func (r *CvRepo) GetUserFullCV(userID uint) (string, error) {
 
 	return fullCV, nil
 }
-func (r *CvRepo) JobAdder(job models.Jobs) (bool, error) {
-	if err := r.db.Create(&job).Error; err != nil {
+func (r *CvRepo) JobAdder(job *models.Jobs) (bool, error) {
+	if err := r.db.Create(job).Error; err != nil {
 		return false, err
 	}
 	return true, nil
