@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func UserScore(job, userCv string) (int, error) {
+func UserScore(job, userCv string) (float32, error) {
 	body := map[string]interface{}{
 		"model": "moonshotai/kimi-k2-instruct-0905",
 		"messages": []map[string]string{
@@ -83,7 +83,7 @@ func UserScore(job, userCv string) (int, error) {
 	content := groqResp.Message[0].Content
 	fmt.Println("Groq returned:", content)
 	var scoreStruct struct {
-		Score int `json:"score"`
+		Score float32 `json:"score"`
 	}
 
 	if err := json.Unmarshal([]byte(content), &scoreStruct); err != nil {

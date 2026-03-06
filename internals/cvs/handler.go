@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/mux"
 	models "github.com/izzy-Ti/PromptRecruit/internals/Models"
 	rag "github.com/izzy-Ti/PromptRecruit/internals/Rag"
 	"github.com/izzy-Ti/PromptRecruit/internals/Utils"
@@ -21,10 +22,6 @@ func NewCVHnadler(svc *CVservice) *NewHandler {
 }
 
 func (s *NewHandler) CVUploader(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		JobId string
-	}
-	Utils.ParseJSON(r, &req)
 	file, header, err := r.FormFile("file")
 	user, _ := r.Context().Value("user").(*models.User)
 	if err != nil {
@@ -81,9 +78,20 @@ func (s *NewHandler) CVUploader(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func (s *NewHandler) Application(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		jobId uint
-	}
-	Utils.ParseJSON(r, &req)
+	vars := mux.Vars(r)
+	jobId, ok := vars["jobId"]
 
+	user, _ := r.Context().Value("user").(*models.User)
+	ok, err := s.svc.ApplicationService(user.ID, jobId)
+	if !ok {
+		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+			"success": false,
+			"message": err,
+		})
+		return
+	}
+	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Application submitted successfully",
+	})
 }

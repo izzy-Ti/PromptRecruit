@@ -22,7 +22,7 @@ type ScoredCv struct {
 	Score float64
 }
 
-func (r *CvRepo) ApplicationSaver(jobId, userId uint, score uint) (bool, error) {
+func (r *CvRepo) ApplicationSaver(jobId, userId uint, score float32) (bool, error) {
 
 	App := models.Application{
 		JobID:  jobId,
@@ -34,31 +34,33 @@ func (r *CvRepo) ApplicationSaver(jobId, userId uint, score uint) (bool, error) 
 	}
 	return true, nil
 }
-func (r *CvRepo) GetUsersCv(jobId uint) (bool, error, [][]float32) {
+func (r *CvRepo) GetUsersCv(jobId uint) (bool, error, [][]float32, string) {
 	var Apps []models.Application
 	var dbCvs []models.Cvs
 	var allUserCvs [][]float32
 	var userIDs []uint
+	var cv []string
 
 	err := r.db.Where("job_id = ?", jobId).Find(&Apps).Error
 	if err != nil {
-		return false, err, nil
+		return false, err, nil, ""
 	}
 	if len(Apps) == 0 {
-		return false, nil, nil
+		return false, nil, nil, ""
 	}
 	for _, app := range Apps {
 		userIDs = append(userIDs, app.UserID)
 	}
 	err = r.db.Where("uploadby IN ?", userIDs).Find(&dbCvs).Error
 	if err != nil {
-		return false, err, nil
+		return false, err, nil, ""
 	}
 
 	for _, vec := range dbCvs {
 		allUserCvs = append(allUserCvs, vec.Vector.Slice())
+		cv = append(cv, vec.Content)
 	}
-	return true, nil, allUserCvs
+	return true, nil, allUserCvs, strings.Join(cv, "")
 }
 func (r *CvRepo) GetJobByID(jobID uint) (bool, error, [][]float32, string) {
 	var job []models.Jobs
@@ -93,4 +95,24 @@ func (r *CvRepo) GetTopMatchingCvs(jobVector []float32, topK int) ([]ScoredCv, e
 	}
 
 	return results, nil
+}
+func (r *CvRepo) GetUserFullCV(userID uint) (string, error) {
+	var cvs []models.Cvs
+
+	err := r.db.
+		Select("content").
+		Where("uploadby = ?", userID).
+		Find(&cvs).Error
+	if err != nil {
+		return "", err
+	}
+
+	var parts []string
+	for _, cv := range cvs {
+		parts = append(parts, cv.Content)
+	}
+
+	fullCV := strings.Join(parts, " ")
+
+	return fullCV, nil
 }
