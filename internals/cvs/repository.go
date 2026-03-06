@@ -62,22 +62,15 @@ func (r *CvRepo) GetUsersCv(jobId uint) (bool, error, [][]float32, string) {
 	}
 	return true, nil, allUserCvs, strings.Join(cv, "")
 }
-func (r *CvRepo) GetJobByID(jobID uint) (bool, error, [][]float32, string) {
-	var job []models.Jobs
-	var jobVec [][]float32
-
-	var jobContent []string
+func (r *CvRepo) GetJobByID(jobID uint) (bool, error, string) {
+	var job models.Jobs
 
 	err := r.db.Where("ID = ?", jobID).Find(&job).Error
 	if err != nil {
-		return false, err, nil, ""
+		return false, err, ""
 	}
-	for _, vec := range job {
-		jobVec = append(jobVec, vec.Vector.Slice())
-		jobContent = append(jobContent, vec.Content)
-	}
-	fullContent := strings.Join(jobContent, " ")
-	return true, nil, jobVec, fullContent
+	fullContent := job.Content
+	return true, nil, fullContent
 }
 func (r *CvRepo) GetTopMatchingCvs(jobVector []float32, topK int) ([]ScoredCv, error) {
 	var results []ScoredCv
@@ -115,4 +108,16 @@ func (r *CvRepo) GetUserFullCV(userID uint) (string, error) {
 	fullCV := strings.Join(parts, " ")
 
 	return fullCV, nil
+}
+func (r *CvRepo) JobAdder(job models.Jobs) (bool, error) {
+	if err := r.db.Create(&job).Error; err != nil {
+		return false, err
+	}
+	return true, nil
+}
+func (r *CvRepo) JobChunkSaver(job models.JobChunk) (bool, error) {
+	if err := r.db.Create(&job).Error; err != nil {
+		return false, err
+	}
+	return true, nil
 }

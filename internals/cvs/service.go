@@ -1,7 +1,9 @@
 package cvs
 
 import (
+	models "github.com/izzy-Ti/PromptRecruit/internals/Models"
 	rag "github.com/izzy-Ti/PromptRecruit/internals/Rag"
+	"github.com/pgvector/pgvector-go"
 )
 
 type CVservice struct {
@@ -17,7 +19,7 @@ func CvUploadSvc() {
 }
 
 func (s *CVservice) ApplicationService(userId, JobId uint) (bool, error) {
-	ok, err, _, content := s.repo.GetJobByID(JobId)
+	ok, err, content := s.repo.GetJobByID(JobId)
 	if !ok {
 		return false, err
 	}
@@ -30,5 +32,35 @@ func (s *CVservice) ApplicationService(userId, JobId uint) (bool, error) {
 		return false, err
 	}
 	s.repo.ApplicationSaver(JobId, userId, score)
+	return true, nil
+}
+func (s *CVservice) jobAddService(Title, content string, userId uint) (bool, error) {
+	var jobChunk []models.JobChunk
+
+	chunks := rag.ChunkText(content, 500)
+	vecs, err := rag.EmbedText(content)
+
+	if err != nil {
+		return false, err
+	}
+
+	job := models.Jobs{
+		Title:    Title,
+		Content:  content,
+		Uploadby: userId,
+	}
+	s.repo.JobAdder(job)
+
+	for i, vec := range vecs {
+		jobChunk = append(jobChunk, models.JobChunk{
+			JobID:   job.ID,
+			Vector:  pgvector.NewVector(vec),
+			Content: chunks[i],
+		})
+	}
+	for _, chunk := range jobChunk {
+		s.repo.JobChunkSaver(chunk)
+	}
+
 	return true, nil
 }

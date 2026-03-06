@@ -45,5 +45,6 @@ func CV(r *mux.Router, db *gorm.DB, userSvc *user.UserService, Cvs *cvs.CVservic
 
 	cvRoute := r.PathPrefix("/cv").Subrouter()
 	cvRoute.Handle("/Uploadcv", Middleware.IsAuth(userSvc, http.HandlerFunc(h.CVUploader))).Methods("POST")
-	cvRoute.Handle("/apply/{jobId}", Middleware.IsAuth(userSvc, http.HandlerFunc(h.Application)))
+	cvRoute.Handle("/apply/{jobId}", Middleware.IsAuth(userSvc, http.HandlerFunc(h.Application))).Methods("POST")
+	cvRoute.Handle("/postjob", Middleware.IsAuth(userSvc, http.HandlerFunc(h.JobPost))).Methods("POST")
 }

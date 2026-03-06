@@ -114,3 +114,23 @@ func (s *NewHandler) Application(w http.ResponseWriter, r *http.Request) {
 		"message": "Application submitted successfully",
 	})
 }
+func (s *NewHandler) JobPost(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+	Utils.ParseJSON(r, &req)
+	user, _ := r.Context().Value("user").(*models.User)
+	ok, err := s.svc.jobAddService(req.Title, req.Content, user.ID)
+	if !ok {
+		Utils.WriteJson(w, http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
+		"success": true,
+		"message": "job post successfully",
+	})
+}
