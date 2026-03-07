@@ -101,7 +101,7 @@ func (s *NewHandler) Application(w http.ResponseWriter, r *http.Request) {
 	jobId, ok := vars["jobId"]
 	jobIdin, err := strconv.Atoi(jobId)
 	user, _ := r.Context().Value("user").(*models.User)
-	ok, err = s.svc.ApplicationService(user.ID, uint(jobIdin))
+	score, ok, err := s.svc.ApplicationService(user.ID, uint(jobIdin))
 	if !ok {
 		Utils.WriteJson(w, http.StatusUnauthorized, map[string]interface{}{
 			"success": false,
@@ -111,6 +111,7 @@ func (s *NewHandler) Application(w http.ResponseWriter, r *http.Request) {
 	}
 	Utils.WriteJson(w, http.StatusOK, map[string]interface{}{
 		"success": true,
+		"score":   score,
 		"message": "Application submitted successfully",
 	})
 }

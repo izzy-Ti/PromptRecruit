@@ -18,22 +18,23 @@ func CvUploadSvc() {
 
 }
 
-func (s *CVservice) ApplicationService(userId, JobId uint) (bool, error) {
-	ok, err, _, jobVecs := s.repo.GetJobByID(JobId)
+func (s *CVservice) ApplicationService(userId, JobId uint) (float32, bool, error) {
+	ok, err, content, jobVecs := s.repo.GetJobByID(JobId)
 	if !ok {
-		return false, err
+		return 0, false, err
 	}
-	_, err, cvec := s.repo.GetUserFullCV(userId)
+	Cv, err, cvec := s.repo.GetUserFullCV(userId)
 	if err != nil {
-		return false, err
+		return 0, false, err
 	}
-	//score, err := rag.UserScore(content, Cv)
+	LLMscore, err := rag.UserScore(content, Cv)
 	score, err := s.repo.GetBestMatchScore(jobVecs, cvec)
 	if err != nil {
-		return false, err
+		return 0, false, err
 	}
-	s.repo.ApplicationSaver(JobId, userId, float32(score))
-	return true, nil
+	finalscore := score*0.7 + float32(LLMscore)*0.3
+	s.repo.ApplicationSaver(JobId, userId, float32(finalscore))
+	return finalscore, true, nil
 }
 func (s *CVservice) jobAddService(Title, content string, userId uint) (bool, error) {
 	//var jobChunk []models.JobChunk

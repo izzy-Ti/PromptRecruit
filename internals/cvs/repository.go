@@ -110,6 +110,7 @@ func (r *CvRepo) GetMatchScore(jobVector, cvVector []float32) (float32, error) {
 	if score > 100 {
 		score = 100
 	}
+	fmt.Print(score)
 
 	return score, nil
 }
@@ -117,6 +118,8 @@ func (r *CvRepo) GetBestMatchScore(jobVectors, cvVectors [][]float32) (float32, 
 	if len(jobVectors) == 0 || len(cvVectors) == 0 {
 		return 0, fmt.Errorf("empty vectors")
 	}
+	fmt.Println("jobVectors:", len(jobVectors))
+	fmt.Println("cvVectors:", len(cvVectors))
 
 	var bestScore float32 = 0
 
@@ -138,10 +141,7 @@ func (r *CvRepo) GetUserFullCV(userID uint) (string, error, [][]float32) {
 	var cvs []models.Cvs
 	var cvec [][]float32
 
-	err := r.db.
-		Select("content").
-		Where("uploadby = ?", userID).
-		Find(&cvs).Error
+	err := r.db.Where("uploadby = ?", userID).Find(&cvs).Error
 	if err != nil {
 		return "", err, nil
 	}
