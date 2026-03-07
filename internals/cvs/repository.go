@@ -2,10 +2,10 @@ package cvs
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	models "github.com/izzy-Ti/PromptRecruit/internals/Models"
-	"github.com/pgvector/pgvector-go"
 	"gorm.io/gorm"
 )
 
@@ -62,52 +62,99 @@ func (r *CvRepo) GetUsersCv(jobId uint) (bool, error, [][]float32, string) {
 	}
 	return true, nil, allUserCvs, strings.Join(cv, "")
 }
-func (r *CvRepo) GetJobByID(jobID uint) (bool, error, string) {
+func (r *CvRepo) GetJobByID(jobID uint) (bool, error, string, [][]float32) {
 	var job models.Jobs
-
-	err := r.db.Where("ID = ?", jobID).Find(&job).Error
+	var Jobs []models.JobChunk
+	var jobvecs [][]float32
+	err := r.db.First(&job, jobID).Error
 	if err != nil {
-		return false, err, ""
+		return false, err, "", nil
+	}
+	err = r.db.Where("job_id = ?", jobID).Find(&Jobs).Error
+	if err != nil {
+		return false, err, "", nil
+	}
+	for _, vecs := range Jobs {
+		jobvecs = append(jobvecs, vecs.Vector.Slice())
 	}
 	fullContent := job.Content
-	return true, nil, fullContent
+	return true, nil, fullContent, jobvecs
 }
-func (r *CvRepo) GetTopMatchingCvs(jobVector []float32, topK int) ([]ScoredCv, error) {
-	var results []ScoredCv
-
-	vec := pgvector.NewVector(jobVector)
-
-	err := r.db.Model(&models.Cvs{}).
-		Select("cvs.*, (cvs.vector <=> ?) AS score", vec).
-		Order("score ASC").
-		Limit(topK).
-		Find(&results).Error
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to query top candidates: %v", err)
+func (r *CvRepo) GetMatchScore(jobVector, cvVector []float32) (float32, error) {
+	if len(jobVector) == 0 || len(cvVector) == 0 {
+		return 0, fmt.Errorf("empty vector")
 	}
 
-	return results, nil
+	if len(jobVector) != len(cvVector) {
+		return 0, fmt.Errorf("vector dimensions do not match")
+	}
+
+	var dotProduct float32
+	var jobNorm float32
+	var cvNorm float32
+
+	for i := 0; i < len(jobVector); i++ {
+		dotProduct += jobVector[i] * cvVector[i]
+		jobNorm += jobVector[i] * jobVector[i]
+		cvNorm += cvVector[i] * cvVector[i]
+	}
+	if jobNorm == 0 || cvNorm == 0 {
+		return 0, fmt.Errorf("zero vector found")
+	}
+	similarity := dotProduct / (float32(math.Sqrt(float64(jobNorm))) * float32(math.Sqrt(float64(cvNorm))))
+	score := similarity * 100
+
+	if score < 0 {
+		score = 0
+	}
+	if score > 100 {
+		score = 100
+	}
+
+	return score, nil
 }
-func (r *CvRepo) GetUserFullCV(userID uint) (string, error) {
+func (r *CvRepo) GetBestMatchScore(jobVectors, cvVectors [][]float32) (float32, error) {
+	if len(jobVectors) == 0 || len(cvVectors) == 0 {
+		return 0, fmt.Errorf("empty vectors")
+	}
+
+	var bestScore float32 = 0
+
+	for _, jobVec := range jobVectors {
+		for _, cvVec := range cvVectors {
+			score, err := r.GetMatchScore(jobVec, cvVec)
+			if err != nil {
+				continue
+			}
+			if score > bestScore {
+				bestScore = score
+			}
+		}
+	}
+
+	return bestScore, nil
+}
+func (r *CvRepo) GetUserFullCV(userID uint) (string, error, [][]float32) {
 	var cvs []models.Cvs
+	var cvec [][]float32
 
 	err := r.db.
 		Select("content").
 		Where("uploadby = ?", userID).
 		Find(&cvs).Error
 	if err != nil {
-		return "", err
+		return "", err, nil
 	}
 
 	var parts []string
 	for _, cv := range cvs {
 		parts = append(parts, cv.Content)
+		cvec = append(cvec, cv.Vector.Slice())
 	}
 
 	fullCV := strings.Join(parts, " ")
 
-	return fullCV, nil
+	return fullCV, nil, cvec
 }
 func (r *CvRepo) JobAdder(job *models.Jobs) (bool, error) {
 	if err := r.db.Create(job).Error; err != nil {

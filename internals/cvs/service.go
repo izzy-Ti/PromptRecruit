@@ -1,8 +1,6 @@
 package cvs
 
 import (
-	"fmt"
-
 	models "github.com/izzy-Ti/PromptRecruit/internals/Models"
 	rag "github.com/izzy-Ti/PromptRecruit/internals/Rag"
 	"github.com/pgvector/pgvector-go"
@@ -21,19 +19,20 @@ func CvUploadSvc() {
 }
 
 func (s *CVservice) ApplicationService(userId, JobId uint) (bool, error) {
-	ok, err, content := s.repo.GetJobByID(JobId)
+	ok, err, _, jobVecs := s.repo.GetJobByID(JobId)
 	if !ok {
 		return false, err
 	}
-	Cv, err := s.repo.GetUserFullCV(userId)
+	_, err, cvec := s.repo.GetUserFullCV(userId)
 	if err != nil {
 		return false, err
 	}
-	score, err := rag.UserScore(content, Cv)
+	//score, err := rag.UserScore(content, Cv)
+	score, err := s.repo.GetBestMatchScore(jobVecs, cvec)
 	if err != nil {
 		return false, err
 	}
-	s.repo.ApplicationSaver(JobId, userId, score)
+	s.repo.ApplicationSaver(JobId, userId, float32(score))
 	return true, nil
 }
 func (s *CVservice) jobAddService(Title, content string, userId uint) (bool, error) {
@@ -64,7 +63,6 @@ func (s *CVservice) jobAddService(Title, content string, userId uint) (bool, err
 			Vector:  pgvector.NewVector(vec),
 			Content: chunks[i],
 		}
-		fmt.Print(vec)
 		if ok, err := s.repo.JobChunkSaver(jobChunk); !ok || err != nil {
 			return false, err
 		}

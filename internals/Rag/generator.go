@@ -9,20 +9,32 @@ import (
 	"os"
 )
 
-func UserScore(job, userCv string) (float32, error) {
+func UserScore(job, userCv string) (int, error) {
 	body := map[string]interface{}{
 		"model": "moonshotai/kimi-k2-instruct-0905",
 		"messages": []map[string]string{
 			{
 				"role": "system",
-				"content": `You are an AI job recruiter. 
+				"content": `You are an AI job recruiter.
 
-	Compare the candidate's CV to the job description and return a single numeric score that represents how well the candidate matches the job. 
+			Compare the candidate CV with the job description using this exact scoring rubric.
 
-	- Score range: 0.0000000 (worst match) to 100.0000000 (perfect match)  
-	- Always return exactly 7 decimal places.  
-	- Do not include any text, only the numeric score.  
-	- Evaluate skills, experience, and relevance of the CV content to the job description.`,
+			Scoring rules:
+			- skills_match: integer from 0 to 30
+			- experience_match: integer from 0 to 25
+			- project_relevance: integer from 0 to 20
+			- tools_alignment: integer from 0 to 15
+			- education_fit: integer from 0 to 10
+
+			Important rules:
+			- Be strict and consistent
+			- Use only integers
+			- Do not guess extra info not found in the CV
+			- Return valid JSON only
+			- Do not return explanations
+
+			The final score will be calculated as:
+			skills_match + experience_match + project_relevance + tools_alignment + education_fit`,
 			},
 			{
 				"role":    "user",
@@ -37,12 +49,29 @@ func UserScore(job, userCv string) (float32, error) {
 				"schema": map[string]interface{}{
 					"type": "object",
 					"properties": map[string]interface{}{
-						"score": map[string]interface{}{
-							"type":        "string",
-							"description": "Numeric score from 0.0000000 to 100.0000000 representing CV-job match with 7 decimal places.",
+						"skills_match": map[string]interface{}{
+							"type": "integer",
+						},
+						"experience_match": map[string]interface{}{
+							"type": "integer",
+						},
+						"project_relevance": map[string]interface{}{
+							"type": "integer",
+						},
+						"tools_alignment": map[string]interface{}{
+							"type": "integer",
+						},
+						"education_fit": map[string]interface{}{
+							"type": "integer",
 						},
 					},
-					"required":             []string{"score"},
+					"required": []string{
+						"skills_match",
+						"experience_match",
+						"project_relevance",
+						"tools_alignment",
+						"education_fit",
+					},
 					"additionalProperties": false,
 				},
 			},
@@ -72,24 +101,37 @@ func UserScore(job, userCv string) (float32, error) {
 		return 0, fmt.Errorf("Groq API error %d: %s", res.StatusCode, string(body))
 	}
 	type CvScoreResponse struct {
-		Message []struct {
-			Content string `json:"content"`
-		} `json:"message"`
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
 	}
 	var groqResp CvScoreResponse
 	if err := json.NewDecoder(res.Body).Decode(&groqResp); err != nil {
 		return 0, fmt.Errorf("failed to decode Groq response: %v", err)
 	}
-	content := groqResp.Message[0].Content
+	if len(groqResp.Choices) == 0 {
+		return 0, fmt.Errorf("no choices returned from Groq")
+	}
+	content := groqResp.Choices[0].Message.Content
 	fmt.Println("Groq returned:", content)
 	var scoreStruct struct {
-		Score float32 `json:"score"`
+		SkillsMatch      int `json:"skills_match"`
+		ExperienceMatch  int `json:"experience_match"`
+		ProjectRelevance int `json:"project_relevance"`
+		ToolsAlignment   int `json:"tools_alignment"`
+		EducationFit     int `json:"education_fit"`
 	}
 
 	if err := json.Unmarshal([]byte(content), &scoreStruct); err != nil {
 		return 0, fmt.Errorf("failed to unmarshal into decision struct: %v\nRaw content: %s", err, content)
 	}
-	score := scoreStruct.Score
-
-	return score, nil
+	total := scoreStruct.SkillsMatch +
+		scoreStruct.ExperienceMatch +
+		scoreStruct.ProjectRelevance +
+		scoreStruct.ToolsAlignment +
+		scoreStruct.EducationFit
+	fmt.Print(total)
+	return total, nil
 }
